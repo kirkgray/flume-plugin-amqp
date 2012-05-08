@@ -120,24 +120,27 @@ abstract class AmqpClient {
 	protected AmqpClient(String host, int port, String virtualHost, String username, String password, String keystoreFile, String keystorePassword, String truststoreFile, String truststorePassword, String[] ciphers) {
 		this(host, port, virtualHost, username, password);
 
-		try {
-			Configuration conf = new Configuration();
-
-			KeyStore keystore = loadKeyStore(conf, keystoreFile, keystorePassword);
-			KeyStore truststore = loadKeyStore(conf, truststoreFile, truststorePassword);
-
-			KeyManagerFactory kmf = KeyManagerFactory.getInstance("SunX509");
-			kmf.init(keystore, keystorePassword.toCharArray());
-			TrustManagerFactory tmf = TrustManagerFactory.getInstance("SunX509");
-			tmf.init(truststore);
-
-			SSLContext c = SSLContext.getInstance("SSLv3");
-			c.init(kmf.getKeyManagers(), tmf.getTrustManagers(), null);
-
-			connectionFactory.useSslProtocol(c);
-			connectionFactory.setSocketFactory(new ConfigurableCipherSocketFactory(ciphers, connectionFactory.getSocketFactory()));
-		} catch (Exception e) {
-			throw new RuntimeException(e);
+		//only implement SSL connection if keystore file is defined
+		if( keystoreFile != null ) {
+			try {
+				Configuration conf = new Configuration();
+	
+				KeyStore keystore = loadKeyStore(conf, keystoreFile, keystorePassword);
+				KeyStore truststore = loadKeyStore(conf, truststoreFile, truststorePassword);
+	
+				KeyManagerFactory kmf = KeyManagerFactory.getInstance("SunX509");
+				kmf.init(keystore, keystorePassword.toCharArray());
+				TrustManagerFactory tmf = TrustManagerFactory.getInstance("SunX509");
+				tmf.init(truststore);
+	
+				SSLContext c = SSLContext.getInstance("SSLv3");
+				c.init(kmf.getKeyManagers(), tmf.getTrustManagers(), null);
+	
+				connectionFactory.useSslProtocol(c);
+				connectionFactory.setSocketFactory(new ConfigurableCipherSocketFactory(ciphers, connectionFactory.getSocketFactory()));
+			} catch (Exception e) {
+				throw new RuntimeException(e);
+			}
 		}
 	}
 
